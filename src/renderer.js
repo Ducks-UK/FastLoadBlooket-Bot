@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
 function App() {
@@ -7,35 +7,25 @@ function App() {
   const [delay, setDelay] = useState(1)
   const [isRunning, setIsRunning] = useState(false)
 
-  useEffect(() => {
-    window.electronAPI.getSettings().then(settings => {
-      setCode(settings.lastCode)
-      setIterations(settings.iterations)
-      setDelay(settings.delay)
-    })
-  }, [])
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
     setIsRunning(true)
 
-    await window.electronAPI.joinGames({
-      code,
-      iterations,
-      delay
-    })
+    // Simulate joining games (won't actually join in web mode)
+    console.log(`Would join ${iterations} times with code ${code} and ${delay}s delay`)
 
-    setIsRunning(false)
-    window.electronAPI.saveSettings({
-      lastCode: code,
-      iterations,
-      delay
-    })
+    setTimeout(() => {
+      setIsRunning(false)
+      alert(`Simulated joining ${iterations} games with code ${code}\n\nNote: This is a web demo. To actually join games, you need the Electron version.`)
+    }, 2000)
   }
 
   return (
     <div className="container">
-      <h1>FastLoadBlooket</h1>
+      <h1>FastLoadBlooket (Web Demo)</h1>
+      <p style={{textAlign: 'center', color: '#666'}}>
+        This is a web demo. For full functionality, use the Electron version.
+      </p>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Blooket Game Code:</label>
@@ -49,7 +39,7 @@ function App() {
         </div>
 
         <div className="form-group">
-          <label>Number of Joins:</label>
+          <label>Number of Joins (max 50):</label>
           <input
             type="number"
             min="1"
