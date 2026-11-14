@@ -8,20 +8,22 @@ const config = {
   gameCode: '904219'
 };
 
-// Word lists for name generation
+// Word lists
 const firstWords = ['Duck', 'AI', 'Bot', 'Chatgpt', 'Claude', 'Magic', 'Unicorn', 'Timmy', 'NOPE', 'owo', 'Lol', 'Deepseek'];
 const secondWords = ['0482', '8347', '8493', '9849', '8583', '84739', '4774', '8493', '83', '8593', '00647'];
 
 async function generateRandomName() {
-  const randomFirst = firstWords[Math.floor(Math.random() * firstWords.length)];
-  const randomSecond = secondWords[Math.floor(Math.random() * secondWords.length)];
-  return `${randomFirst}${randomSecond}`;
+  return `${firstWords[Math.floor(Math.random() * firstWords.length)]}${secondWords[Math.floor(Math.random() * secondWords.length)]}`;
 }
 
 async function joinBlooketGame() {
   try {
+    // Kill any existing Chrome processes
+    require('child_process').execSync('pkill -f chrome || true', { stdio: 'ignore' });
+
     const browser = await puppeteer.launch({
       headless: "new",
+      executablePath: '/usr/bin/google-chrome-stable',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -29,16 +31,15 @@ async function joinBlooketGame() {
         '--disable-gpu',
         '--single-process',
         '--disable-dev-tools',
-        '--no-zygote',
         '--disable-accelerated-2d-canvas',
-        '--disable-software-rasterizer',
-        '--disable-gl-drawing-for-tests'
-      ]
+        '--disable-software-rasterizer'
+      ],
+      timeout: 30000
     });
 
     for (let i = 0; i < config.iterations; i++) {
       const page = await browser.newPage();
-      const randomName = await generateRandomName();
+      const name = await generateRandomName();
 
       try {
         await page.goto(`https://blooket.com/play/${config.gameCode}`, {
@@ -47,14 +48,14 @@ async function joinBlooketGame() {
         });
 
         await page.waitForSelector('input[name="name"]', { timeout: 10000 });
-        await page.type('input[name="name"]', randomName);
+        await page.type('input[name="name"]', name);
         await page.click('button[type="submit"]');
 
-        console.log(`Joined game as ${randomName} (Attempt ${i + 1}/${config.iterations})`);
-        await new Promise(resolve => setTimeout(resolve, config.delay));
+        console.log(`Joined as ${name} (${i+1}/${config.iterations})`);
+        await new Promise(r => setTimeout(r, config.delay));
         await page.close();
-      } catch (pageError) {
-        console.error(`Error during join attempt ${i + 1}:`, pageError);
+      } catch (e) {
+        console.error(`Attempt ${i+1} failed:`, e.message);
         await page.close();
       }
     }
@@ -66,17 +67,14 @@ async function joinBlooketGame() {
   }
 }
 
-// Read user input for configuration
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+// Get user input
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-rl.question('Enter Blooket game code: ', (gameCode) => {
-  config.gameCode = gameCode;
-  rl.question('Number of joins (default: 5): ', (iterations) => {
-    config.iterations = parseInt(iterations) || 5;
-    rl.question('Delay between joins (ms, default: 1000): ', (delay) => {
+rl.question('Game code: ', code => {
+  config.gameCode = code;
+  rl.question('Joins (1): ', num => {
+    config.iterations = parseInt(num) || 1;
+    rl.question('Delay ms (1000): ', delay => {
       config.delay = parseInt(delay) || 1000;
       rl.close();
       joinBlooketGame();
