@@ -9,24 +9,27 @@ const config = {
 };
 
 // Word lists for name generation
-const adjectives = ['Quick', 'Fast', 'Lazy', 'Happy', 'Angry', 'Silly', 'Brave', 'Shy'];
-const nouns = ['Fox', 'Bear', 'Tiger', 'Lion', 'Panda', 'Wolf', 'Eagle', 'Hawk'];
+const firstWords = ['Duck', 'AI', 'Bot', 'Chatgpt', 'Claude', 'Magic', 'Unicorn', 'Timmy', 'NOPE', 'owo', 'Lol', 'Deepseek'];
+const secondWords = ['0482', '8347', '8493', '9849', '8583', '84739', '4774', '8493', '83', '8593', '00647'];
 
 async function generateRandomName() {
-  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-  return `${randomAdjective}${randomNoun}`;
+  const randomFirst = firstWords[Math.floor(Math.random() * firstWords.length)];
+  const randomSecond = secondWords[Math.floor(Math.random() * secondWords.length)];
+  return `${randomFirst}${randomSecond}`;
 }
 
 async function joinBlooketGame() {
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: "new",
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
-      '--single-process'
+      '--single-process',
+      '--disable-dev-tools',
+      '--no-zygote',
+      '--disable-accelerated-2d-canvas'
     ]
   });
 
@@ -35,10 +38,10 @@ async function joinBlooketGame() {
     const randomName = await generateRandomName();
 
     try {
-      await page.goto(`https://blooket.com/play/${config.gameCode}`, { waitUntil: 'networkidle2' });
+      await page.goto(`https://blooket.com/play/${config.gameCode}`, { waitUntil: 'networkidle2', timeout: 30000 });
 
       // Wait for the join form to load
-      await page.waitForSelector('input[name="name"]', { timeout: 5000 });
+      await page.waitForSelector('input[name="name"]', { timeout: 10000 });
 
       // Fill in the name and select a random blook
       await page.type('input[name="name"]', randomName);
