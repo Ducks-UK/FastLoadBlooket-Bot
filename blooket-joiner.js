@@ -2,8 +2,8 @@ const puppeteer = require('puppeteer');
 const readline = require('readline');
 
 // Word lists for random name generation
-const adjectives = ["AI", "BOT", "CHATGPT", "Timmy", "NoTaAIbOT", "Idontlikeu", "Claude", "Deepseek", "wow", "owo"];
-const nouns = ["21", "53", "843", "056", "517", "528", "906", "484", "363", "075"];
+const adjectives = ["Quick", "Swift", "Mighty", "Happy", "Brave", "Fierce", "Cool", "Silly", "Glowing", "Zesty"];
+const nouns = ["Fox", "Dragon", "Panda", "Tiger", "Lion", "Bear", "Wolf", "Eagle", "Shark", "Phoenix"];
 
 // Random name generator
 function generateRandomName() {
@@ -18,37 +18,80 @@ function selectRandomBlook() {
     return blooks[Math.floor(Math.random() * blooks.length)];
 }
 
+// Detect available browser
+async function getBrowserPath() {
+    const browsers = [
+        '/usr/bin/google-chrome-stable',  // Chrome
+        '/usr/bin/microsoft-edge-stable',  // Edge
+        '/usr/bin/edge'                    // Edge alternative
+    ];
+
+    for (const path of browsers) {
+        try {
+            await require('fs').promises.access(path, require('fs').constants.X_OK);
+            return path;
+        } catch {}
+    }
+    throw new Error('No supported browser found (Chrome/Edge)');
+}
+
 // Main function to join Blooket game
 async function joinBlooketGame(gameCode, iterations = 5, delay = 1000) {
-    const browser = await puppeteer.launch({ headless: false }); // Run in non-headless mode for visibility
+    try {
+        const browserPath = await getBrowserPath();
+        console.log(`🚀 Using browser: ${browserPath}`);
 
-    for (let i = 0; i < iterations; i++) {
-        const page = await browser.newPage();
+        const browser = await puppeteer.launch({
+            headless: false,
+            executablePath: browserPath,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--window-size=1920,1080'
+            ]
+        });
 
-        // Navigate to the Blooket game
-        await page.goto(`https://blooket.com/play/${gameCode}`, { waitUntil: 'networkidle2' });
+        for (let i = 0; i < iterations; i++) {
+            try {
+                const page = await browser.newPage();
+                await page.setViewport({ width: 1920, height: 1080 });
 
-        // Generate random name and blook
-        const randomName = generateRandomName();
-        const randomBlook = selectRandomBlook();
+                // Navigate to the Blooket game
+                await page.goto(`https://blooket.com/play/${gameCode}`, {
+                    waitUntil: 'networkidle2',
+                    timeout: 30000
+                });
 
-        // Fill in the name
-        await page.type('input[placeholder="Enter your name"]', randomName);
+                // Generate random name and blook
+                const randomName = generateRandomName();
+                const randomBlook = selectRandomBlook();
 
-        // Select a random blook (if dropdown exists)
-        await page.select('select', randomBlook);
+                // Fill in the name
+                await page.type('input[placeholder="Enter your name"]', randomName, { delay: 50 });
 
-        // Click the join button
-        await page.click('button:has-text("Join")');
+                // Select a random blook (if dropdown exists)
+                await page.select('select', randomBlook);
 
-        console.log(`Joined game as ${randomName} with blook ${randomBlook}`);
+                // Click the join button
+                await page.click('button:has-text("Join")');
 
-        // Close the tab after a delay
-        await new Promise(resolve => setTimeout(resolve, delay));
-        await page.close();
+                console.log(`✅ Joined game as ${randomName} with blook ${randomBlook} (${i+1}/${iterations})`);
+
+                // Close the tab after a delay
+                await new Promise(resolve => setTimeout(resolve, delay));
+                await page.close();
+            } catch (tabError) {
+                console.error(`❌ Error in tab ${i+1}:`, tabError.message);
+            }
+        }
+
+        await browser.close();
+        console.log('🎉 All joins completed successfully!');
+    } catch (error) {
+        console.error('❌ Fatal error:', error.message);
     }
-
-    await browser.close();
 }
 
 // Read input from command line
@@ -61,7 +104,7 @@ rl.question('Enter Blooket game code: ', (gameCode) => {
     rl.question('Number of joins (default: 5): ', (iterations) => {
         rl.question('Delay between joins (ms, default: 1000): ', (delay) => {
             joinBlooketGame(
-                gameCode,
+                gameCode.trim(),
                 parseInt(iterations) || 5,
                 parseInt(delay) || 1000
             );
