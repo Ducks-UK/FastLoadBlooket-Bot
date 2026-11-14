@@ -1,7 +1,5 @@
 const puppeteer = require('puppeteer');
 const readline = require('readline');
-const fs = require('fs');
-const path = require('path');
 
 // Word lists for random name generation
 const adjectives = ["Quick", "Swift", "Mighty", "Happy", "Brave", "Fierce", "Cool", "Silly", "Glowing", "Zesty"];
@@ -20,64 +18,21 @@ function selectRandomBlook() {
     return blooks[Math.floor(Math.random() * blooks.length)];
 }
 
-// Check if a file exists and is executable
-function isExecutable(filePath) {
-    try {
-        fs.accessSync(filePath, fs.constants.X_OK);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-// Find available browser
-async function getBrowserPath() {
-    const possiblePaths = [
-        // Chrome paths
-        '/usr/bin/google-chrome-stable',
-        '/usr/bin/google-chrome',
-        '/opt/google/chrome/chrome',
-
-        // Edge paths
-        '/usr/bin/microsoft-edge-stable',
-        '/usr/bin/microsoft-edge',
-        '/usr/bin/edge',
-
-        // Fallback to Puppeteer's Chromium
-        path.join(require('puppeteer').executablePath())
-    ];
-
-    for (const path of possiblePaths) {
-        if (isExecutable(path)) {
-            console.log(`🔍 Found browser at: ${path}`);
-            return path;
-        }
-    }
-
-    // If no browser found, try installing Puppeteer's Chromium
-    try {
-        console.log('⚠️ No browser found, using Puppeteer\'s Chromium...');
-        return puppeteer.executablePath();
-    } catch (e) {
-        throw new Error('No browser found and failed to use Puppeteer\'s Chromium. Please install Chrome or Edge.');
-    }
-}
-
 // Main function to join Blooket game
 async function joinBlooketGame(gameCode, iterations = 5, delay = 1000) {
     try {
-        const browserPath = await getBrowserPath();
-        console.log(`🚀 Using browser: ${browserPath}`);
-
         const browser = await puppeteer.launch({
-            headless: false,
-            executablePath: browserPath,
+            headless: false, // Show browser windows
+            executablePath: '/usr/bin/google-chrome-stable',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
-                '--window-size=1920,1080'
+                '--window-size=1920,1080',
+                '--disable-dev-tools', // Prevent dev tools from opening
+                '--disable-extensions',
+                '--disable-plugins-discovery'
             ]
         });
 
@@ -119,10 +74,12 @@ async function joinBlooketGame(gameCode, iterations = 5, delay = 1000) {
         console.log('🎉 All joins completed successfully!');
     } catch (error) {
         console.error('❌ Fatal error:', error.message);
-        console.log('💡 Tips:');
-        console.log('1. Make sure Chrome or Edge is installed');
-        console.log('2. Run: sudo apt-get install -y google-chrome-stable microsoft-edge-stable');
-        console.log('3. If using Puppeteer, run: npm install puppeteer');
+        console.log('\n💡 Troubleshooting:');
+        console.log('1. Make sure Chrome is installed:');
+        console.log('   sudo apt-get install -y google-chrome-stable');
+        console.log('2. If Chrome is installed, try running:');
+        console.log('   export DISPLAY=:99');
+        console.log('   Xvfb :99 -screen 0 1024x768x24 &');
     }
 }
 
