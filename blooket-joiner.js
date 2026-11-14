@@ -1,41 +1,11 @@
-const puppeteer = require('puppeteer');
-const { execSync } = require('child_process');
+// blooket-joiner.js
+import puppeteer from 'puppeteer';
 
-// Priority order: Edge first (for your PC), then Chrome (for Codespaces)
-const browserPaths = [
-  // Windows Edge (your PC)
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  // Linux Edge (Codespaces)
-  '/usr/bin/microsoft-edge-stable',
-  // Windows Chrome (fallback)
-  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-  // Linux Chrome (Codespaces)
-  '/usr/bin/google-chrome-stable'
-];
-
-// Name generation lists
 const firstNames = ["Duck", "AI", "Bot", "Chatgpt", "Claude", "Magic", "Unicorn", "Timmy", "NOPE", "owo", "Lol", "Deepseek"];
 const lastNames = ["0482", "8347", "8493", "9849", "8583", "84739", "4774", "8493", "83", "8593", "00647"];
 
-function getBrowserPath() {
-  for (const path of browserPaths) {
-    try {
-      execSync(`test -f "${path}" || exit 1`);
-      console.log(`Detected browser: ${path.includes('edge') ? 'Edge' : 'Chrome'}`);
-      return path;
-    } catch (e) { /* Not found */ }
-  }
-  throw new Error("No supported browser (Chrome/Edge) found");
-}
-
 async function joinBlooketGame(gameCode, iterations, delayMs) {
-  const browserPath = getBrowserPath();
-  const isEdge = browserPath.includes('edge');
-
   const browser = await puppeteer.launch({
-    executablePath: browserPath,
     headless: false,
     args: [
       '--no-sandbox',
