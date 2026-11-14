@@ -1,7 +1,2 @@
-const { contextBridge, ipcRenderer } = require('electron')
-
-contextBridge.exposeInMainWorld('electronAPI', {
-  joinGames: (data) => ipcRenderer.invoke('join-games', data),
-  getSettings: () => ipcRenderer.invoke('get-settings'),
-  saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings)
-})
+// This file is no longer used in web mode
+console.log("Preload disabled in web mode")
