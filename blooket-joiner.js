@@ -5,7 +5,7 @@ const readline = require('readline');
 const config = {
   iterations: 1,
   delay: 1000,
-  gameCode: '904219'
+  gameCode: '649681'
 };
 
 // Word lists
@@ -18,9 +18,9 @@ async function generateRandomName() {
 
 async function joinBlooketGame() {
   try {
-    console.log('Starting browser...');
+    console.log('Launching browser...');
     const browser = await puppeteer.launch({
-      headless: "new",
+      headless: false, // Run in non-headless mode first for debugging
       executablePath: '/usr/bin/google-chrome-stable',
       args: [
         '--no-sandbox',
@@ -29,10 +29,8 @@ async function joinBlooketGame() {
         '--disable-gpu',
         '--single-process',
         '--disable-dev-tools',
-        '--disable-accelerated-2d-canvas',
-        '--disable-software-rasterizer',
-        '--disable-gl-drawing-for-tests',
-        '--window-size=1920,1080'
+        '--window-size=1920,1080',
+        '--disable-features=IsolateOrigins,site-per-process'
       ],
       timeout: 30000
     });
@@ -52,19 +50,24 @@ async function joinBlooketGame() {
           timeout: 30000
         });
 
-        console.log('Waiting for name input field...');
+        console.log('Waiting for page to load...');
+        await page.waitForTimeout(3000); // Added delay to ensure page loads
+
+        console.log('Looking for join form...');
         await page.waitForSelector('input[name="name"]', { timeout: 10000 });
 
         console.log('Typing name and submitting...');
         await page.type('input[name="name"]', name);
         await page.click('button[type="submit"]');
 
-        console.log(`Joined as ${name} (${i+1}/${config.iterations})`);
+        console.log(`Successfully joined as ${name} (${i+1}/${config.iterations})`);
         await new Promise(r => setTimeout(r, config.delay));
         await page.close();
       } catch (e) {
         console.error(`Attempt ${i+1} failed:`, e.message);
-        console.log('Page content:', await page.content());
+        console.log('Current page URL:', page.url());
+        console.log('Page title:', await page.title());
+        await page.screenshot({ path: `error-${i}.png` });
         await page.close();
       }
     }
