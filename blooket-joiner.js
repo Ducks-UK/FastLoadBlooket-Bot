@@ -1,96 +1,90 @@
 const puppeteer = require('puppeteer');
-const readline = require('readline');
+const { execSync } = require('child_process');
 
-// Configuration
-const config = {
-  iterations: 1,
-  delay: 1000,
-  gameCode: '649681'
-};
+// Lists of possible browser paths (Linux/Windows)
+const chromePaths = [
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/google-chrome',
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+];
 
-// Word lists
-const firstWords = ['Duck', 'AI', 'Bot', 'Chatgpt', 'Claude', 'Magic', 'Unicorn', 'Timmy', 'NOPE', 'owo', 'Lol', 'Deepseek'];
-const secondWords = ['0482', '8347', '8493', '9849', '8583', '84739', '4774', '8493', '83', '8593', '00647'];
+const edgePaths = [
+  '/usr/bin/microsoft-edge-stable',
+  '/usr/bin/microsoft-edge',
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+];
 
-async function generateRandomName() {
-  return `${firstWords[Math.floor(Math.random() * firstWords.length)]}${secondWords[Math.floor(Math.random() * secondWords.length)]}`;
+// Detect installed browser
+function getBrowserPath() {
+  for (const path of chromePaths) {
+    try {
+      execSync(`test -f "${path}" || exit 1`);
+      return path;
+    } catch (e) { /* Not Chrome */ }
+  }
+
+  for (const path of edgePaths) {
+    try {
+      execSync(`test -f "${path}" || exit 1`);
+      return path;
+    } catch (e) { /* Not Edge */ }
+  }
+
+  throw new Error("Neither Chrome nor Edge is installed.");
 }
 
-async function joinBlooketGame() {
-  try {
-    console.log('Launching browser...');
-    const browser = await puppeteer.launch({
-      headless: false, // Run in non-headless mode first for debugging
-      executablePath: '/usr/bin/google-chrome-stable',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--single-process',
-        '--disable-dev-tools',
-        '--window-size=1920,1080',
-        '--disable-features=IsolateOrigins,site-per-process'
-      ],
-      timeout: 30000
-    });
+// Name generation lists
+const firstNames = ["Duck", "AI", "Bot", "Chatgpt", "Claude", "Magic", "Unicorn", "Timmy", "NOPE", "owo", "Lol", "Deepseek"];
+const lastNames = ["0482", "8347", "8493", "9849", "8583", "84739", "4774", "8493", "83", "8593", "00647"];
 
-    console.log('Browser launched successfully');
+// Main function
+async function joinBlooketGame(gameCode, iterations, delayMs) {
+  const browserPath = getBrowserPath();
+  const isChrome = browserPath.includes('chrome');
+  const isEdge = browserPath.includes('edge');
 
-    for (let i = 0; i < config.iterations; i++) {
-      console.log(`Starting join attempt ${i+1}/${config.iterations}`);
-      const page = await browser.newPage();
-      const name = await generateRandomName();
-      console.log(`Generated name: ${name}`);
+  console.log(`Using ${isChrome ? 'Chrome' : 'Edge'} at: ${browserPath}`);
 
-      try {
-        console.log(`Navigating to https://blooket.com/play/${config.gameCode}`);
-        await page.goto(`https://blooket.com/play/${config.gameCode}`, {
-          waitUntil: 'networkidle2',
-          timeout: 30000
-        });
+  const browser = await puppeteer.launch({
+    executablePath: browserPath,
+    headless: false,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process',
+      '--disable-dev-tools',
+      '--disable-accelerated-2d-canvas'
+    ]
+  });
 
-        console.log('Waiting for page to load...');
-        await page.waitForTimeout(3000); // Added delay to ensure page loads
+  for (let i = 0; i < iterations; i++) {
+    const page = await browser.newPage();
+    const randomName = `${firstNames[Math.floor(Math.random() * firstNames.length)]}${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
 
-        console.log('Looking for join form...');
-        await page.waitForSelector('input[name="name"]', { timeout: 10000 });
-
-        console.log('Typing name and submitting...');
-        await page.type('input[name="name"]', name);
-        await page.click('button[type="submit"]');
-
-        console.log(`Successfully joined as ${name} (${i+1}/${config.iterations})`);
-        await new Promise(r => setTimeout(r, config.delay));
-        await page.close();
-      } catch (e) {
-        console.error(`Attempt ${i+1} failed:`, e.message);
-        console.log('Current page URL:', page.url());
-        console.log('Page title:', await page.title());
-        await page.screenshot({ path: `error-${i}.png` });
-        await page.close();
-      }
+    try {
+      await page.goto(`https://play.blooket.com/play?gameID=${gameCode}`, { waitUntil: 'networkidle2' });
+      await page.waitForSelector('input[name="name"]', { visible: true });
+      await page.type('input[name="name"]', randomName);
+      await page.click('button[type="submit"]');
+      console.log(`✅ Joined game ${gameCode} as ${randomName} (${i + 1}/${iterations})`);
+    } catch (err) {
+      console.error(`❌ Failed to join game: ${err.message}`);
     }
 
-    await browser.close();
-    console.log('All joins completed successfully');
-  } catch (error) {
-    console.error('Fatal error:', error);
-    process.exit(1);
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+    await page.close();
   }
+
+  await browser.close();
 }
 
-// Get user input
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+// Example usage (modify as needed)
+const gameCode = process.argv[2] || "649681"; // Read from CLI or default
+const iterations = parseInt(process.argv[3]) || 1;
+const delayMs = parseInt(process.argv[4]) || 2000;
 
-rl.question('Game code: ', code => {
-  config.gameCode = code;
-  rl.question('Joins (1): ', num => {
-    config.iterations = parseInt(num) || 1;
-    rl.question('Delay ms (1000): ', delay => {
-      config.delay = parseInt(delay) || 1000;
-      rl.close();
-      joinBlooketGame();
-    });
-  });
-});
+joinBlooketGame(gameCode, iterations, delayMs).catch(console.error);
