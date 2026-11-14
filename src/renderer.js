@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 function App() {
   const [code, setCode] = useState('')
   const [iterations, setIterations] = useState(5)
-  const [delay, setDelay] = useState(2)
+  const [delay, setDelay] = useState(1)
   const [isRunning, setIsRunning] = useState(false)
 
   useEffect(() => {
@@ -44,11 +44,12 @@ function App() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             required
+            placeholder="Enter game code"
           />
         </div>
 
         <div className="form-group">
-          <label>Number of Joins:</label>
+          <label>Number of Joins (max 50):</label>
           <input
             type="number"
             min="1"
@@ -60,7 +61,7 @@ function App() {
         </div>
 
         <div className="form-group">
-          <label>Delay Between Joins (seconds):</label>
+          <label>Delay Between Joins (seconds, min 1):</label>
           <input
             type="number"
             min="1"
