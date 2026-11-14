@@ -5,7 +5,8 @@ const lastNames = ["0482", "8347", "8493", "9849", "8583", "84739", "4774", "849
 
 async function joinBlooketGame(gameCode, iterations, delayMs) {
   const browser = await puppeteer.launch({
-    headless: true,  // Changed to true
+    executablePath: '/usr/bin/google-chrome-stable',
+    headless: true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
