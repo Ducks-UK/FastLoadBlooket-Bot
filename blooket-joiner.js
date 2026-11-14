@@ -21,16 +21,16 @@ function selectRandomBlook() {
 // Main function to join Blooket game
 async function joinBlooketGame(gameCode, iterations = 5, delay = 1000) {
     try {
+        // Launch Puppeteer with its built-in Chromium
         const browser = await puppeteer.launch({
             headless: false, // Show browser windows
-            executablePath: '/usr/bin/google-chrome-stable',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
                 '--window-size=1920,1080',
-                '--disable-dev-tools', // Prevent dev tools from opening
+                '--disable-dev-tools',
                 '--disable-extensions',
                 '--disable-plugins-discovery'
             ]
@@ -75,11 +75,11 @@ async function joinBlooketGame(gameCode, iterations = 5, delay = 1000) {
     } catch (error) {
         console.error('❌ Fatal error:', error.message);
         console.log('\n💡 Troubleshooting:');
-        console.log('1. Make sure Chrome is installed:');
-        console.log('   sudo apt-get install -y google-chrome-stable');
-        console.log('2. If Chrome is installed, try running:');
-        console.log('   export DISPLAY=:99');
-        console.log('   Xvfb :99 -screen 0 1024x768x24 &');
+        console.log('1. Make sure you have internet connection');
+        console.log('2. Try running: npm install puppeteer');
+        console.log('3. If still failing, try:');
+        console.log('   export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true');
+        console.log('   npm install puppeteer');
     }
 }
 
