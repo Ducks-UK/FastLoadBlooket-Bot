@@ -49,7 +49,7 @@ function App() {
         </div>
 
         <div className="form-group">
-          <label>Number of Joins (max 50):</label>
+          <label>Number of Joins:</label>
           <input
             type="number"
             min="1"
@@ -61,7 +61,7 @@ function App() {
         </div>
 
         <div className="form-group">
-          <label>Delay Between Joins (seconds, min 1):</label>
+          <label>Delay Between Joins (seconds):</label>
           <input
             type="number"
             min="1"
