@@ -1,12 +1,8 @@
 {
-  "name": "fastload-blooket",
+  "name": "FastLoadBlooket",
   "version": "1.0.0",
-  "description": "Automated Blooket game joiner",
-  "main": "blooket-joiner.js",
-  "scripts": {
-    "join": "node blooket-joiner.js"
-  },
+  "type": "module",
   "dependencies": {
-    "puppeteer": "^21.6.0"
+    "puppeteer": "25.17.0"
   }
 }
