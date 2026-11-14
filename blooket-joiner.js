@@ -18,9 +18,7 @@ async function generateRandomName() {
 
 async function joinBlooketGame() {
   try {
-    // Kill any existing Chrome processes
-    require('child_process').execSync('pkill -f chrome || true', { stdio: 'ignore' });
-
+    console.log('Starting browser...');
     const browser = await puppeteer.launch({
       headless: "new",
       executablePath: '/usr/bin/google-chrome-stable',
@@ -32,22 +30,32 @@ async function joinBlooketGame() {
         '--single-process',
         '--disable-dev-tools',
         '--disable-accelerated-2d-canvas',
-        '--disable-software-rasterizer'
+        '--disable-software-rasterizer',
+        '--disable-gl-drawing-for-tests',
+        '--window-size=1920,1080'
       ],
       timeout: 30000
     });
 
+    console.log('Browser launched successfully');
+
     for (let i = 0; i < config.iterations; i++) {
+      console.log(`Starting join attempt ${i+1}/${config.iterations}`);
       const page = await browser.newPage();
       const name = await generateRandomName();
+      console.log(`Generated name: ${name}`);
 
       try {
+        console.log(`Navigating to https://blooket.com/play/${config.gameCode}`);
         await page.goto(`https://blooket.com/play/${config.gameCode}`, {
           waitUntil: 'networkidle2',
           timeout: 30000
         });
 
+        console.log('Waiting for name input field...');
         await page.waitForSelector('input[name="name"]', { timeout: 10000 });
+
+        console.log('Typing name and submitting...');
         await page.type('input[name="name"]', name);
         await page.click('button[type="submit"]');
 
@@ -56,11 +64,13 @@ async function joinBlooketGame() {
         await page.close();
       } catch (e) {
         console.error(`Attempt ${i+1} failed:`, e.message);
+        console.log('Page content:', await page.content());
         await page.close();
       }
     }
 
     await browser.close();
+    console.log('All joins completed successfully');
   } catch (error) {
     console.error('Fatal error:', error);
     process.exit(1);
