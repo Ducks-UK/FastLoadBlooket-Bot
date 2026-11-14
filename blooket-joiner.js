@@ -19,46 +19,51 @@ async function generateRandomName() {
 }
 
 async function joinBlooketGame() {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--single-process',
-      '--disable-dev-tools',
-      '--no-zygote',
-      '--disable-accelerated-2d-canvas'
-    ]
-  });
+  try {
+    const browser = await puppeteer.launch({
+      headless: "new",
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+        '--disable-dev-tools',
+        '--no-zygote',
+        '--disable-accelerated-2d-canvas',
+        '--disable-software-rasterizer',
+        '--disable-gl-drawing-for-tests'
+      ]
+    });
 
-  for (let i = 0; i < config.iterations; i++) {
-    const page = await browser.newPage();
-    const randomName = await generateRandomName();
+    for (let i = 0; i < config.iterations; i++) {
+      const page = await browser.newPage();
+      const randomName = await generateRandomName();
 
-    try {
-      await page.goto(`https://blooket.com/play/${config.gameCode}`, { waitUntil: 'networkidle2', timeout: 30000 });
+      try {
+        await page.goto(`https://blooket.com/play/${config.gameCode}`, {
+          waitUntil: 'networkidle2',
+          timeout: 30000
+        });
 
-      // Wait for the join form to load
-      await page.waitForSelector('input[name="name"]', { timeout: 10000 });
+        await page.waitForSelector('input[name="name"]', { timeout: 10000 });
+        await page.type('input[name="name"]', randomName);
+        await page.click('button[type="submit"]');
 
-      // Fill in the name and select a random blook
-      await page.type('input[name="name"]', randomName);
-      await page.click('button[type="submit"]');
-
-      console.log(`Joined game as ${randomName} (Attempt ${i + 1}/${config.iterations})`);
-
-      // Close the tab after a delay
-      await new Promise(resolve => setTimeout(resolve, config.delay));
-      await page.close();
-    } catch (error) {
-      console.error(`Error during join attempt ${i + 1}:`, error);
-      await page.close();
+        console.log(`Joined game as ${randomName} (Attempt ${i + 1}/${config.iterations})`);
+        await new Promise(resolve => setTimeout(resolve, config.delay));
+        await page.close();
+      } catch (pageError) {
+        console.error(`Error during join attempt ${i + 1}:`, pageError);
+        await page.close();
+      }
     }
-  }
 
-  await browser.close();
+    await browser.close();
+  } catch (error) {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  }
 }
 
 // Read user input for configuration
@@ -74,7 +79,7 @@ rl.question('Enter Blooket game code: ', (gameCode) => {
     rl.question('Delay between joins (ms, default: 1000): ', (delay) => {
       config.delay = parseInt(delay) || 1000;
       rl.close();
-      joinBlooketGame().catch(console.error);
+      joinBlooketGame();
     });
   });
 });
