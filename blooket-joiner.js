@@ -1,4 +1,3 @@
-// blooket-joiner.js
 import puppeteer from 'puppeteer';
 
 const firstNames = ["Duck", "AI", "Bot", "Chatgpt", "Claude", "Magic", "Unicorn", "Timmy", "NOPE", "owo", "Lol", "Deepseek"];
