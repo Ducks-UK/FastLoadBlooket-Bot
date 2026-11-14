@@ -1,25 +1,5 @@
-{
-  "name": "FastLoadBlooket",
-  "version": "1.0.0",
-  "main": "src/main.js",
-  "scripts": {
-    "start": "electron .",
-    "dev": "vite dev",
-    "build": "vite build && electron-builder"
-  },
-  "dependencies": {
-    "electron": "^28.0.0",
-    "electron-store": "^8.1.0",
-    "puppeteer": "^21.6.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.45",
-    "@types/react-dom": "^18.2.18",
-    "electron-builder": "^24.9.0",
-    "vite": "^5.0.0",
-    "vite-plugin-electron": "^0.28.0",
-    "vite-plugin-electron-renderer": "^0.14.5"
-  }
+"scripts": {
+  "start": "vite dev",
+  "build": "vite build",
+  "preview": "vite preview"
 }
