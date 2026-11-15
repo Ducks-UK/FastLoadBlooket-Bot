@@ -27,11 +27,6 @@ async function main() {
         rl.question("Enter your choice (1 or 2): ", resolve);
     });
 
-    const browserChoice = answer.trim();
-    const browserPath = browserChoice === '1'
-        ? '/usr/bin/microsoft-edge-stable'
-        : '/usr/bin/google-chrome-stable';
-
     const gameCode = process.argv[2];
     if (!gameCode) {
         console.error("Please provide a game code as an argument");
@@ -51,7 +46,7 @@ async function main() {
         process.exit(1);
     }
 
-    const joinFunction = browserChoice === '1' ? joinWithEdge : joinWithChrome;
+    const joinFunction = answer.trim() === '1' ? joinWithEdge : joinWithChrome;
 
     for (let i = 0; i < iterations; i++) {
         try {
@@ -60,7 +55,7 @@ async function main() {
 
             console.log(`Joining game ${gameCode} as ${name} with ${blook} (${i + 1}/${iterations})`);
 
-            await joinFunction(browserPath, gameCode, name, blook, delay);
+            await joinFunction(gameCode, name, blook, delay);
 
             if (i < iterations - 1) {
                 console.log(`Waiting ${delay} seconds before next join...`);
@@ -68,7 +63,6 @@ async function main() {
             }
         } catch (error) {
             console.error(`Error during join ${i + 1}:`, error.message);
-            // Continue with next join even if one fails
         }
     }
 
