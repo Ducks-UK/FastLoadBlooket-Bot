@@ -1,16 +1,5 @@
-// src/utils/randomNames.js
-const adjectives = [
-  "bot", "robot", "ai", "chatgpt", "fake", "lol", "clever", "dont",
-  "cheater", "bruh", "money", "IwantCheese", "itchy", "tom", "claude", "deepseek"
-];
-
-const animals = [
-  "11", "23", "42", "26", "73", "63", "73", "152",
-  "842", "748", "24", "90", "4000", "V4", "16", "84"
-];
-
-export function generateRandomName() {
-  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const animal = animals[Math.floor(Math.random() * animals.length)];
-  return `${adj}${animal}`;
+export function getRandomName() {
+  const FIRST_NAMES = ["Duck", "AI", "Bot", "Chatgpt", "Claude", "Magic", "Unicorn", "Timmy", "NOPE", "owo", "Lol", "Deepseek"];
+  const LAST_NUMBERS = ["0482", "8347", "8493", "9849", "8583", "84739", "4774", "8493", "83", "8593", "00647"];
+  return `${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${LAST_NUMBERS[Math.floor(Math.random() * LAST_NUMBERS.length)]}`;
 }
