@@ -1,90 +1,56 @@
-import readline from 'readline';
-import { joinGame } from './edge-joiner.js';
+import { existsSync } from 'fs';
+import { joinGame as joinWithChrome } from './chrome-joiner.js';
+import { joinGame as joinWithEdge } from './edge-joiner.js';
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+const BROWSER_PATHS = {
+  chrome: '/usr/bin/google-chrome-stable',
+  edge: '/usr/bin/microsoft-edge-stable'
+};
 
-function getRandomName() {
-    const firstNames = ["Duck", "AI", "Bot", "Chatgpt", "Claude", "Magic", "Unicorn", "Timmy", "NOPE", "owo", "Lol", "Deepseek"];
-    const secondNames = ["0482", "8347", "8493", "9849", "8583", "84739", "4774", "8493", "83", "8593", "00647"];
-    return `${firstNames[Math.floor(Math.random() * firstNames.length)]}${secondNames[Math.floor(Math.random() * secondNames.length)]}`;
+function verifyBrowsers() {
+  for (const [browser, path] of Object.entries(BROWSER_PATHS)) {
+    if (!existsSync(path)) {
+      console.error(`❌ ${browser} not found at ${path}`);
+      process.exit(1);
+    }
+  }
 }
 
-function getRandomBlook() {
-    const blooks = ["pink", "blue", "green", "yellow", "red", "purple", "orange", "black", "white", "rainbow"];
-    return blooks[Math.floor(Math.random() * blooks.length)];
+function showUsage() {
+  console.log('Usage: node src/launcher.js <gameCode> <iterations> <delay>');
+  console.log('Example: node src/launcher.js 298346 5 2');
 }
 
 async function main() {
-    console.log("🔍 Verifying browser installations...");
-    const { execSync } = await import('child_process');
+  if (process.argv.length < 5) {
+    showUsage();
+    process.exit(1);
+  }
+
+  const [,, gameCode, iterations, delay] = process.argv;
+  const iterationsNum = parseInt(iterations);
+  const delayNum = Math.max(1, parseInt(delay));
+
+  if (isNaN(iterationsNum) || isNaN(delayNum)) {
+    console.error('❌ Invalid arguments. Please provide numbers for iterations and delay.');
+    showUsage();
+    process.exit(1);
+  }
+
+  verifyBrowsers();
+  const browserType = 'chrome'; // or 'edge'
+
+  for (let i = 0; i < iterationsNum; i++) {
     try {
-        execSync('google-chrome-stable --version');
-        console.log("✅ Chrome is installed");
-    } catch {
-        console.log("❌ Chrome not found");
+      if (browserType === 'chrome') {
+        await joinWithChrome(gameCode, delayNum);
+      } else {
+        await joinWithEdge(gameCode, delayNum);
+      }
+    } catch (err) {
+      console.error('❌ Error:', err);
     }
-    try {
-        execSync('microsoft-edge-stable --version');
-        console.log("✅ Edge is installed");
-    } catch {
-        console.log("❌ Edge not found");
-    }
-
-    console.log("\nSelect browser:");
-    console.log("1. Microsoft Edge");
-    console.log("2. Google Chrome");
-
-    const answer = await new Promise(resolve => {
-        rl.question("Enter your choice (1 or 2): ", resolve);
-    });
-
-    const gameCode = process.argv[2];
-    if (!gameCode) {
-        console.error("❌ Please provide a game code as an argument");
-        console.log("Example: node launcher.js 123456 5 2");
-        process.exit(1);
-    }
-
-    const iterations = parseInt(process.argv[3]) || 1;
-    const delay = parseInt(process.argv[4]) || 1;
-
-    if (iterations < 1 || delay < 1) {
-        console.error("❌ Iterations and delay must be at least 1");
-        process.exit(1);
-    }
-
-    console.log(`\n🎮 Starting FastLoadBlooket v1.0`);
-    console.log(`📋 Game Code: ${gameCode}`);
-    console.log(`🔁 Joins: ${iterations}`);
-    console.log(`⏱️ Delay: ${delay}s between joins\n`);
-
-    for (let i = 0; i < iterations; i++) {
-        try {
-            const name = getRandomName();
-            const blook = getRandomBlook();
-
-            console.log(`🚀 Join ${i+1}/${iterations}: ${name} (${blook})`);
-
-            await joinGame(gameCode, name, blook, delay);
-
-            if (i < iterations - 1) {
-                console.log(`⏳ Waiting ${delay}s...\n`);
-                await new Promise(resolve => setTimeout(resolve, delay * 1000));
-            }
-        } catch (error) {
-            console.error(`⚠️ Join ${i+1} failed: ${error.message}\n`);
-        }
-    }
-
-    console.log("✅ All joins completed!");
-    rl.close();
-    process.exit(0);
+  }
 }
 
-main().catch(err => {
-    console.error("💥 Fatal error:", err);
-    process.exit(1);
-});
+main();
