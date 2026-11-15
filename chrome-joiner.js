@@ -1,8 +1,8 @@
 import puppeteer from 'puppeteer-core';
 
-export async function joinGame(browserPath, gameCode, name, blook, delay) {
+export async function joinGame(gameCode, name, blook, delay) {
     const browser = await puppeteer.launch({
-        executablePath: browserPath,
+        executablePath: '/usr/bin/google-chrome-stable',
         headless: true,
         args: [
             '--no-sandbox',
