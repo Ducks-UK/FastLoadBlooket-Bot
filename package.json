@@ -1,8 +1,12 @@
 {
-  "name": "FastLoadBlooket",
+  "name": "fastloadblooket-bot",
   "version": "1.0.0",
   "type": "module",
+  "main": "src/launcher.js",
+  "scripts": {
+    "start": "node src/launcher.js"
+  },
   "dependencies": {
-    "puppeteer": "25.17.0"
+    "puppeteer-core": "25.17.0"
   }
 }
