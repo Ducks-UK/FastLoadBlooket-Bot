@@ -30,19 +30,17 @@ export async function joinGameWithEdge(gameCode, delayMs) {
             console.log('🔵 Launching Edge browser...');
             browser = await puppeteer.launch({
                 executablePath: edgePath,
-                headless: false,  // Changed to false to make browser visible
+                headless: false,
                 args: launchArgs,
                 ignoreHTTPSErrors: true,
-                defaultViewport: null  // Let the browser use its default size
+                defaultViewport: null
             });
 
             console.log('🔵 Creating new page...');
             page = await browser.newPage();
 
-            // Set viewport
             await page.setViewport({ width: 1366, height: 768 });
 
-            // Block unnecessary resources
             await page.setRequestInterception(true);
             page.on('request', (req) => {
                 const resourceType = req.resourceType();
@@ -59,28 +57,21 @@ export async function joinGameWithEdge(gameCode, delayMs) {
                 timeout: 30000
             });
 
-            // Generate random name and select blook
             const { name, blook } = generateRandomName();
-
             console.log(`🔵 Using name: ${name} and blook: ${blook}`);
 
-            // Type name
             await page.waitForSelector('input[placeholder="Enter your name"]', { timeout: 10000 });
             await page.type('input[placeholder="Enter your name"]', name, { delay: Math.random() * 100 + 50 });
 
-            // Select blook
             await page.waitForSelector(`[data-testid="blook-${blook}"]`, { timeout: 10000 });
             await page.click(`[data-testid="blook-${blook}"]`);
 
-            // Join game
             await page.waitForSelector('button:has-text("Join Game")', { timeout: 10000 });
             await page.click('button:has-text("Join Game")');
 
-            // Enter game code
             await page.waitForSelector('input[placeholder="Game Code"]', { timeout: 10000 });
             await page.type('input[placeholder="Game Code"]', gameCode, { delay: Math.random() * 100 + 50 });
 
-            // Final join
             await page.waitForSelector('button:has-text("Join")', { timeout: 10000 });
             await page.click('button:has-text("Join")');
 
@@ -101,7 +92,6 @@ export async function joinGameWithEdge(gameCode, delayMs) {
                 return false;
             }
 
-            // Exponential backoff
             await new Promise(resolve => setTimeout(resolve, delayMs * 1000 * attempts));
         }
     }
