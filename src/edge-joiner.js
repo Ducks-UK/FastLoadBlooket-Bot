@@ -27,13 +27,16 @@ export async function joinGameWithEdge(gameCode, delayMs) {
 
     while (attempts < maxAttempts) {
         try {
+            console.log('🔵 Launching Edge browser...');
             browser = await puppeteer.launch({
                 executablePath: edgePath,
-                headless: true,
+                headless: false,  // Changed to false to make browser visible
                 args: launchArgs,
-                ignoreHTTPSErrors: true
+                ignoreHTTPSErrors: true,
+                defaultViewport: null  // Let the browser use its default size
             });
 
+            console.log('🔵 Creating new page...');
             page = await browser.newPage();
 
             // Set viewport
@@ -50,11 +53,16 @@ export async function joinGameWithEdge(gameCode, delayMs) {
                 }
             });
 
-            // Navigate to Blooket
-            await page.goto('https://blooket.com/login', { waitUntil: 'networkidle2', timeout: 30000 });
+            console.log('🔵 Navigating to Blooket...');
+            await page.goto('https://blooket.com/login', {
+                waitUntil: 'networkidle2',
+                timeout: 30000
+            });
 
             // Generate random name and select blook
             const { name, blook } = generateRandomName();
+
+            console.log(`🔵 Using name: ${name} and blook: ${blook}`);
 
             // Type name
             await page.waitForSelector('input[placeholder="Enter your name"]', { timeout: 10000 });
@@ -77,6 +85,7 @@ export async function joinGameWithEdge(gameCode, delayMs) {
             await page.click('button:has-text("Join")');
 
             console.log(`✅ Successfully joined game ${gameCode} with ${name} (${blook})`);
+            await new Promise(resolve => setTimeout(resolve, delayMs * 1000));
             await browser.close();
             return true;
 
@@ -84,8 +93,8 @@ export async function joinGameWithEdge(gameCode, delayMs) {
             attempts++;
             console.log(`⚠️ Join attempt ${attempts} failed, retrying...`);
 
-            if (page) await page.close();
-            if (browser) await browser.close();
+            if (page) await page.close().catch(() => {});
+            if (browser) await browser.close().catch(() => {});
 
             if (attempts >= maxAttempts) {
                 console.error(`❌ Fatal error after ${maxAttempts} attempts:`, error.message);
