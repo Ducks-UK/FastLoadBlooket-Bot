@@ -18,7 +18,22 @@ function getRandomBlook() {
 }
 
 async function main() {
-    console.log("Select browser:");
+    console.log("🔍 Verifying browser installations...");
+    const { execSync } = await import('child_process');
+    try {
+        execSync('google-chrome-stable --version');
+        console.log("✅ Chrome is installed");
+    } catch {
+        console.log("❌ Chrome not found");
+    }
+    try {
+        execSync('microsoft-edge-stable --version');
+        console.log("✅ Edge is installed");
+    } catch {
+        console.log("❌ Edge not found");
+    }
+
+    console.log("\nSelect browser:");
     console.log("1. Microsoft Edge");
     console.log("2. Google Chrome");
 
@@ -61,7 +76,6 @@ async function main() {
             }
         } catch (error) {
             console.error(`⚠️ Join ${i+1} failed: ${error.message}\n`);
-            // Continue with next join even if one fails
         }
     }
 
