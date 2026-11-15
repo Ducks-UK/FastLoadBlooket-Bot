@@ -1,89 +1,60 @@
-import { existsSync } from 'fs';
-import { joinGame as joinWithChrome } from './chrome-joiner.js';
-import { joinGame as joinWithEdge } from './edge-joiner.js';
+// src/launcher.js
+import { joinGameWithChrome } from './chrome-joiner.js';
+import { joinGameWithEdge } from './edge-joiner.js';
+import { validateGameCode } from './utils/gameCodeValidator.js';
 
-const BROWSER_PATHS = {
-  chrome: '/usr/bin/google-chrome-stable',
-  edge: '/usr/bin/microsoft-edge-stable'
-};
-
-function verifyBrowsers() {
-  const available = [];
-  for (const [browser, path] of Object.entries(BROWSER_PATHS)) {
-    if (existsSync(path)) available.push(browser);
-  }
-  return available;
-}
+const BROWSER_TYPES = ['chrome', 'edge'];
+const DEFAULT_ITERATIONS = 1;
+const DEFAULT_DELAY = 1;
 
 async function main() {
-  if (process.argv.length < 4 || process.argv.length > 5) {
-    console.log('\n🚀 FastLoadBlooket Bot - Usage:');
-    console.log('node src/launcher.js <gameCode> <iterations> <delay> [browser]');
-    console.log('\nArguments:');
-    console.log('  gameCode    - The 6 or 7-digit Blooket game code (e.g., 2711641)');
-    console.log('  iterations  - Number of times to join (e.g., 5)');
-    console.log('  delay       - Delay between joins in seconds (minimum 1)');
-    console.log('  browser     - Optional: "chrome" or "edge" (defaults to edge)');
-    console.log('\nExamples:');
-    console.log('  node src/launcher.js 2711641 5 2');
-    console.log('  node src/launcher.js 2711641 5 2 chrome');
-    console.log('');
-    process.exit(1);
-  }
+    const args = process.argv.slice(2);
 
-  const [,, gameCode, iterations, delay, browserType = 'edge'] = process.argv;
-
-  if (!/^\d{6,7}$/.test(gameCode)) {
-    console.error('❌ Invalid game code. Must be 6 or 7 digits (e.g., 2711641)');
-    process.exit(1);
-  }
-
-  const iterationsNum = parseInt(iterations);
-  const delayNum = Math.max(1, parseInt(delay));
-
-  if (isNaN(iterationsNum) || isNaN(delayNum)) {
-    console.error('❌ Invalid arguments. Please provide numbers for iterations and delay.');
-    process.exit(1);
-  }
-
-  const available = verifyBrowsers();
-  if (available.length === 0) {
-    console.error('❌ No browsers found. Please run: chmod +x setup-browsers.sh && ./setup-browsers.sh');
-    process.exit(1);
-  }
-
-  const browser = available.includes(browserType) ? browserType : available[0];
-
-  console.log(`\n🎯 Starting ${browser} bot for game ${gameCode}`);
-  console.log(`🔢 Joining ${iterationsNum} times with ${delayNum}s delay\n`);
-
-  try {
-    if (browser === 'chrome') {
-      for (let i = 0; i < iterationsNum; i++) {
-        try {
-          await joinWithChrome(gameCode, delayNum);
-        } catch (err) {
-          console.error(`⚠️ Join ${i+1} failed, retrying...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          await joinWithChrome(gameCode, delayNum);
-        }
-      }
-    } else {
-      for (let i = 0; i < iterationsNum; i++) {
-        try {
-          await joinWithEdge(gameCode, delayNum);
-        } catch (err) {
-          console.error(`⚠️ Join ${i+1} failed, retrying...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          await joinWithEdge(gameCode, delayNum);
-        }
-      }
+    if (args.length < 1 || args.length > 3) {
+        console.error('❌ Usage: node src/launcher.js <gameCode> [iterations] [delaySeconds]');
+        console.error('Example: node src/launcher.js 2711641 5 2');
+        process.exit(1);
     }
-    console.log('\n✅ All joins completed successfully!');
-  } catch (err) {
-    console.error('\n❌ Fatal error:', err.message);
+
+    const gameCode = args[0];
+    const iterations = args[1] ? parseInt(args[1]) : DEFAULT_ITERATIONS;
+    const delayMs = args[2] ? parseInt(args[2]) : DEFAULT_DELAY;
+
+    if (!validateGameCode(gameCode)) {
+        console.error('❌ Invalid game code. Must be 6 or 7 digits.');
+        process.exit(1);
+    }
+
+    if (iterations < 1) {
+        console.error('❌ Iterations must be at least 1');
+        process.exit(1);
+    }
+
+    if (delayMs < 1) {
+        console.error('❌ Delay must be at least 1 second');
+        process.exit(1);
+    }
+
+    console.log(`🎯 Starting bot for game ${gameCode}`);
+    console.log(`🔢 Joining ${iterations} times with ${delayMs}s delay`);
+
+    // Try Chrome first
+    if (await joinGameWithChrome(gameCode, delayMs)) {
+        console.log('\n✅ All joins completed successfully with Chrome');
+        process.exit(0);
+    }
+
+    // Fall back to Edge
+    if (await joinGameWithEdge(gameCode, delayMs)) {
+        console.log('\n✅ All joins completed successfully with Edge');
+        process.exit(0);
+    }
+
+    console.error('\n❌ Failed to join game with both Chrome and Edge');
     process.exit(1);
-  }
 }
 
-main();
+main().catch(error => {
+    console.error('❌ Fatal error in launcher:', error);
+    process.exit(1);
+});
