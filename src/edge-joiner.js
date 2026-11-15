@@ -1,75 +1,61 @@
 import puppeteer from 'puppeteer-core';
-import fs from 'fs';
+import { getRandomName } from './utils/randomNames.js';
 
-export async function joinGame(gameCode, name, blook, delay) {
-    // Define all possible browser paths in Codespaces
-    const possiblePaths = [
-        '/usr/bin/google-chrome-stable',
-        '/usr/bin/microsoft-edge-stable',
-        '/opt/microsoft/msedge/microsoft-edge',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/chrome-browser',
-        '/snap/bin/chromium'
-    ];
+export async function joinGame(gameCode, delay) {
+  const browser = await puppeteer.launch({
+    executablePath: '/usr/bin/microsoft-edge-stable',
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process',
+      '--disable-dev-tools',
+      '--disable-accelerated-2d-canvas',
+      '--disable-features=VizDisplayCompositor',
+      '--disable-blink-features=AutomationControlled',
+      '--user-data-dir=/tmp/edge-profile'  // Edge-specific
+    ]
+  });
 
-    // Find first existing path
-    const executablePath = possiblePaths.find(p => {
-        try {
-            return fs.existsSync(p) && fs.accessSync(p, fs.constants.X_OK);
-        } catch {
-            return false;
-        }
+  try {
+    const context = await browser.createIncognitoBrowserContext();
+    const page = await context.newPage();
+
+    // Anti-detection measures
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59');
+    await page.setViewport({ width: 1366, height: 768 });
+
+    // Block unnecessary resources
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
     });
 
-    if (!executablePath) {
-        throw new Error(`No browser executable found. Tried: ${possiblePaths.join(', ')}`);
-    }
-
-    console.log(`Using browser at: ${executablePath}`);
-
-    const browser = await puppeteer.launch({
-        executablePath,
-        headless: true,
-        protocolTimeout: 0,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--single-process',
-            '--disable-dev-tools',
-            '--disable-accelerated-2d-canvas',
-            '--disable-features=VizDisplayCompositor',
-            '--disable-blink-features=AutomationControlled'
-        ],
-        ignoreHTTPSErrors: true
+    // Navigate to game
+    await page.goto(`https://blooket.com/play/${gameCode}`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 10000
     });
 
-    try {
-        const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        await page.setViewport({ width: 1366, height: 768 });
+    // Random delay to appear human-like
+    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 
-        console.log(`Navigating to: https://blooket.com/play/${gameCode}`);
-        await page.goto(`https://blooket.com/play/${gameCode}`, {
-            waitUntil: 'domcontentloaded',
-            timeout: 30000
-        });
+    // Generate random name and join
+    const name = getRandomName();
+    await page.type('#name-input', name, { delay: 50 + Math.random() * 100 });
+    await page.click('#join-button');
 
-        await page.waitForSelector('input[name="name"]', { timeout: 15000 });
-        await page.type('input[name="name"]', name, { delay: 50 });
-
-        const blookButtons = await page.$$('button[data-testid^="blook-"]');
-        if (blookButtons.length > 0) {
-            const randomIndex = Math.floor(Math.random() * blookButtons.length);
-            await blookButtons[randomIndex].click();
-        }
-
-        await page.waitForSelector('button[type="submit"]', { timeout: 10000 });
-        await page.click('button[type="submit"]');
-
-        await page.waitForTimeout(delay * 1000);
-    } finally {
-        await browser.close();
-    }
+    console.log(`✅ Edge: Joined ${gameCode} as ${name}`);
+    await new Promise(resolve => setTimeout(resolve, delay * 1000));
+    await context.close();
+  } finally {
+    await browser.close();
+  }
 }
