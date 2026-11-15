@@ -21,12 +21,13 @@ function showUsage() {
   console.log('\n🚀 FastLoadBlooket Bot - Usage:');
   console.log('node src/launcher.js <gameCode> <iterations> <delay> [browser]');
   console.log('\nArguments:');
-  console.log('  gameCode    - The 6-digit Blooket game code (e.g., 298346)');
+  console.log('  gameCode    - The 6 or 7-digit Blooket game code (e.g., 298346 or 2711641)');
   console.log('  iterations  - Number of times to join (e.g., 5)');
   console.log('  delay       - Delay between joins in seconds (minimum 1)');
   console.log('  browser     - Optional: "chrome" or "edge" (defaults to chrome)');
-  console.log('\nExample:');
-  console.log('  node src/launcher.js 298346 5 2 edge');
+  console.log('\nExamples:');
+  console.log('  node src/launcher.js 298346 5 2');
+  console.log('  node src/launcher.js 2711641 5 2 edge');
   console.log('');
 }
 
@@ -39,9 +40,9 @@ async function main() {
 
   const [,, gameCode, iterations, delay, browserType = 'chrome'] = process.argv;
 
-  // Validate arguments
-  if (!/^\d{6}$/.test(gameCode)) {
-    console.error('❌ Invalid game code. Must be 6 digits (e.g., 298346)');
+  // Validate arguments - now accepts both 6 and 7 digit codes
+  if (!/^\d{6,7}$/.test(gameCode)) {
+    console.error('❌ Invalid game code. Must be 6 or 7 digits (e.g., 298346 or 2711641)');
     showUsage();
     process.exit(1);
   }
