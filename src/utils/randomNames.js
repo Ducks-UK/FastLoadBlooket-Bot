@@ -13,3 +13,6 @@ export function generateRandomName() {
         blook: randomBlook
     };
 }
+
+// Backward compatibility alias
+export const getRandomName = generateRandomName;
