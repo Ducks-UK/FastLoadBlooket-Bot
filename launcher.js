@@ -1,6 +1,5 @@
 import readline from 'readline';
-import { joinGame as joinWithEdge } from './edge-joiner.js';
-import { joinGame as joinWithChrome } from './chrome-joiner.js';
+import { joinGame } from './edge-joiner.js';
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -29,48 +28,49 @@ async function main() {
 
     const gameCode = process.argv[2];
     if (!gameCode) {
-        console.error("Please provide a game code as an argument");
+        console.error("❌ Please provide a game code as an argument");
+        console.log("Example: node launcher.js 123456 5 2");
         process.exit(1);
     }
 
     const iterations = parseInt(process.argv[3]) || 1;
     const delay = parseInt(process.argv[4]) || 1;
 
-    if (iterations < 1) {
-        console.error("Number of joins must be at least 1");
+    if (iterations < 1 || delay < 1) {
+        console.error("❌ Iterations and delay must be at least 1");
         process.exit(1);
     }
 
-    if (delay < 1) {
-        console.error("Delay between joins must be at least 1 second");
-        process.exit(1);
-    }
-
-    const joinFunction = answer.trim() === '1' ? joinWithEdge : joinWithChrome;
+    console.log(`\n🎮 Starting FastLoadBlooket v1.0`);
+    console.log(`📋 Game Code: ${gameCode}`);
+    console.log(`🔁 Joins: ${iterations}`);
+    console.log(`⏱️ Delay: ${delay}s between joins\n`);
 
     for (let i = 0; i < iterations; i++) {
         try {
             const name = getRandomName();
             const blook = getRandomBlook();
 
-            console.log(`Joining game ${gameCode} as ${name} with ${blook} (${i + 1}/${iterations})`);
+            console.log(`🚀 Join ${i+1}/${iterations}: ${name} (${blook})`);
 
-            await joinFunction(gameCode, name, blook, delay);
+            await joinGame(gameCode, name, blook, delay);
 
             if (i < iterations - 1) {
-                console.log(`Waiting ${delay} seconds before next join...`);
+                console.log(`⏳ Waiting ${delay}s...\n`);
                 await new Promise(resolve => setTimeout(resolve, delay * 1000));
             }
         } catch (error) {
-            console.error(`Error during join ${i + 1}:`, error.message);
+            console.error(`⚠️ Join ${i+1} failed: ${error.message}\n`);
+            // Continue with next join even if one fails
         }
     }
 
+    console.log("✅ All joins completed!");
     rl.close();
     process.exit(0);
 }
 
 main().catch(err => {
-    console.error("Fatal error:", err);
+    console.error("💥 Fatal error:", err);
     process.exit(1);
 });
